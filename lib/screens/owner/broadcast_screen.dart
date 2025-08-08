@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'base_owner_screen.dart';
 
 class BroadcastScreen extends StatefulWidget {
   const BroadcastScreen({super.key});
@@ -8,10 +9,11 @@ class BroadcastScreen extends StatefulWidget {
   State<BroadcastScreen> createState() => _BroadcastScreenState();
 }
 
-class _BroadcastScreenState extends State<BroadcastScreen> {
+class _BroadcastScreenState extends State<BroadcastScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _messageController = TextEditingController();
+  late AnimationController _animationController;
   String _selectedPG = 'All PGs';
   String _selectedType = 'General';
   String _selectedPriority = 'Normal';
@@ -72,290 +74,326 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _titleController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final totalBroadcasts = _broadcasts.length;
     final totalRecipients = _broadcasts.fold<int>(0, (sum, b) => sum + (b['recipients'] as int));
     final totalRead = _broadcasts.fold<int>(0, (sum, b) => sum + (b['readCount'] as int));
     final readRate = totalRecipients > 0 ? ((totalRead / totalRecipients) * 100).toStringAsFixed(1) : '0';
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Broadcast Messages',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Colors.white,
+    return BaseOwnerScreen(
+      title: 'Broadcast Messages',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.analytics, color: Color(0xFF667EEA)),
+          onPressed: () => _showComingSoon(context),
+          tooltip: 'Analytics',
+        ),
+      ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddBroadcastDialog(context),
+        backgroundColor: const Color(0xFF667EEA),
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        label: Text(
+          'New Broadcast',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.analytics, color: Colors.orange),
-            onPressed: () => _showComingSoon(context),
-            tooltip: 'Analytics',
-          ),
-        ],
+        icon: const Icon(Icons.add_rounded, size: 20),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Summary Stats
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Total Sent', '$totalBroadcasts', Icons.send, Colors.blue),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Recipients', '$totalRecipients', Icons.people, Colors.green),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Read Rate', '$readRate%', Icons.visibility, Colors.orange),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Stats Grid
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            childAspectRatio: 1.2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            children: [
+              _buildStatCard(
+                'Total',
+                '$totalBroadcasts',
+                Icons.broadcast_on_home_rounded,
+                const Color(0xFF667EEA),
+              ),
+              _buildStatCard(
+                'Recipients',
+                '$totalRecipients',
+                Icons.people_rounded,
+                const Color(0xFF3B82F6),
+              ),
+              _buildStatCard(
+                'Read',
+                '$totalRead',
+                Icons.visibility_rounded,
+                const Color(0xFF10B981),
+              ),
+              _buildStatCard(
+                'Read Rate',
+                '$readRate%',
+                Icons.analytics_rounded,
+                const Color(0xFFF59E0B),
+              ),
+            ],
+          ),
+          
+          // Send New Broadcast
+          Container(
+            padding: const EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(24.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            const SizedBox(height: 28.0),
-            // Send New Broadcast
-            Container(
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(24.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.orange.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.broadcast_on_personal, color: Colors.orange, size: 24),
+                    const SizedBox(width: 12.0),
+                    Text(
+                      'Send New Broadcast',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20.0),
+                Form(
+                  key: _formKey,
+                  child: Column(
                     children: [
-                      Icon(Icons.broadcast_on_personal, color: Colors.orange, size: 24),
-                      const SizedBox(width: 12.0),
-                      Text(
-                        'Send New Broadcast',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                      TextFormField(
+                        controller: _titleController,
+                        style: GoogleFonts.poppins(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Title',
+                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white30),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white30),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.orange),
+                          ),
+                        ),
+                        validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedPG,
+                              dropdownColor: Colors.black,
+                              iconEnabledColor: Colors.orange,
+                              style: GoogleFonts.poppins(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Target PG',
+                                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.white30),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.white30),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.orange),
+                                ),
+                              ),
+                              items: _pgs.map((pg) => DropdownMenuItem(
+                                value: pg,
+                                child: Text(pg),
+                              )).toList(),
+                              onChanged: (value) => setState(() => _selectedPG = value!),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedType,
+                              dropdownColor: Colors.black,
+                              iconEnabledColor: Colors.orange,
+                              style: GoogleFonts.poppins(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Type',
+                                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.white30),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.white30),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.orange),
+                                ),
+                              ),
+                              items: _types.map((type) => DropdownMenuItem(
+                                value: type,
+                                child: Text(type),
+                              )).toList(),
+                              onChanged: (value) => setState(() => _selectedType = value!),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedPriority,
+                              dropdownColor: Colors.black,
+                              iconEnabledColor: Colors.orange,
+                              style: GoogleFonts.poppins(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Priority',
+                                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.white30),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.white30),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: Colors.orange),
+                                ),
+                              ),
+                              items: _priorities.map((priority) => DropdownMenuItem(
+                                value: priority,
+                                child: Text(priority),
+                              )).toList(),
+                              onChanged: (value) => setState(() => _selectedPriority = value!),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _messageController,
+                        maxLines: 4,
+                        style: GoogleFonts.poppins(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Message',
+                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white30),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white30),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.orange),
+                          ),
+                        ),
+                        validator: (value) => value?.isEmpty == true ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Broadcast sent successfully!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              _titleController.clear();
+                              _messageController.clear();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text(
+                            'Send Broadcast',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20.0),
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _titleController,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                          decoration: InputDecoration(
-                            labelText: 'Title',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.orange),
-                            ),
-                          ),
-                          validator: (value) => value?.isEmpty == true ? 'Required' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: _selectedPG,
-                                dropdownColor: Colors.black,
-                                iconEnabledColor: Colors.orange,
-                                style: GoogleFonts.poppins(color: Colors.white),
-                                decoration: InputDecoration(
-                                  labelText: 'Target PG',
-                                  labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.white30),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.white30),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.orange),
-                                  ),
-                                ),
-                                items: _pgs.map((pg) => DropdownMenuItem(
-                                  value: pg,
-                                  child: Text(pg),
-                                )).toList(),
-                                onChanged: (value) => setState(() => _selectedPG = value!),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: _selectedType,
-                                dropdownColor: Colors.black,
-                                iconEnabledColor: Colors.orange,
-                                style: GoogleFonts.poppins(color: Colors.white),
-                                decoration: InputDecoration(
-                                  labelText: 'Type',
-                                  labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.white30),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.white30),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.orange),
-                                  ),
-                                ),
-                                items: _types.map((type) => DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type),
-                                )).toList(),
-                                onChanged: (value) => setState(() => _selectedType = value!),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: _selectedPriority,
-                                dropdownColor: Colors.black,
-                                iconEnabledColor: Colors.orange,
-                                style: GoogleFonts.poppins(color: Colors.white),
-                                decoration: InputDecoration(
-                                  labelText: 'Priority',
-                                  labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.white30),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.white30),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide(color: Colors.orange),
-                                  ),
-                                ),
-                                items: _priorities.map((priority) => DropdownMenuItem(
-                                  value: priority,
-                                  child: Text(priority),
-                                )).toList(),
-                                onChanged: (value) => setState(() => _selectedPriority = value!),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _messageController,
-                          maxLines: 4,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                          decoration: InputDecoration(
-                            labelText: 'Message',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.orange),
-                            ),
-                          ),
-                          validator: (value) => value?.isEmpty == true ? 'Required' : null,
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Broadcast sent successfully!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                                _titleController.clear();
-                                _messageController.clear();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: Text(
-                              'Send Broadcast',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: 28.0),
-            // Broadcast History
-            Text(
-              'Broadcast History',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.black,
-              ),
+          ),
+          const SizedBox(height: 28.0),
+          // Broadcast History
+          Text(
+            'Broadcast History',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.black,
             ),
-            const SizedBox(height: 16.0),
-            ..._broadcasts.map((broadcast) => Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: _buildBroadcastCard(broadcast),
-            )),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16.0),
+          ..._broadcasts.map((broadcast) => Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: _buildBroadcastCard(broadcast),
+          )),
+        ],
       ),
     );
   }
@@ -368,7 +406,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
         borderRadius: BorderRadius.circular(24.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
+            color: Colors.orange.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -407,7 +445,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
         borderRadius: BorderRadius.circular(24.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
+            color: Colors.orange.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -421,7 +459,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
               Container(
                 padding: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: broadcast['color'].withOpacity(0.2),
+                  color: broadcast['color'].withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: Icon(
@@ -505,7 +543,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color),
       ),
@@ -543,4 +581,9 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
       ),
     );
   }
-} 
+
+  void _showAddBroadcastDialog(BuildContext context) {
+    // Implement your dialog here
+    _showComingSoon(context); // Temporary solution using existing method
+  }
+}

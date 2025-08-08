@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'base_owner_screen.dart';
 
 class NoticesManagementScreen extends StatefulWidget {
   const NoticesManagementScreen({super.key});
@@ -8,9 +9,10 @@ class NoticesManagementScreen extends StatefulWidget {
   State<NoticesManagementScreen> createState() => _NoticesManagementScreenState();
 }
 
-class _NoticesManagementScreenState extends State<NoticesManagementScreen> {
+class _NoticesManagementScreenState extends State<NoticesManagementScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _responseController = TextEditingController();
+  late AnimationController _animationController;
   String _selectedPG = 'All PGs';
   String _selectedStatus = 'All';
   String _selectedType = 'All';
@@ -75,209 +77,245 @@ class _NoticesManagementScreenState extends State<NoticesManagementScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _responseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final totalNotices = _notices.length;
     final pendingNotices = _notices.where((n) => n['status'] == 'Pending').length;
     final approvedNotices = _notices.where((n) => n['status'] == 'Approved').length;
     final rejectedNotices = _notices.where((n) => n['status'] == 'Rejected').length;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Notices Management',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Colors.white,
-          ),
+    return BaseOwnerScreen(
+      title: 'Notices Management',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.broadcast_on_personal, color: Color(0xFF667EEA)),
+          onPressed: () => _showComingSoon(context),
+          tooltip: 'Broadcast',
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.broadcast_on_personal, color: Colors.orange),
-            onPressed: () => _showComingSoon(context),
-            tooltip: 'Send Broadcast',
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Stats Grid
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            childAspectRatio: 1.2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            children: [
+              _buildStatCard(
+                'Total',
+                '$totalNotices',
+                Icons.notifications_rounded,
+                const Color(0xFF667EEA),
+              ),
+              _buildStatCard(
+                'Pending',
+                '$pendingNotices',
+                Icons.pending_rounded,
+                const Color(0xFFF59E0B),
+              ),
+              _buildStatCard(
+                'Approved',
+                '$approvedNotices',
+                Icons.check_circle_rounded,
+                const Color(0xFF10B981),
+              ),
+              _buildStatCard(
+                'Rejected',
+                '$rejectedNotices',
+                Icons.cancel_rounded,
+                const Color(0xFFEF4444),
+              ),
+            ],
           ),
+          
+          // Summary Stats
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard('Total', '$totalNotices', Icons.list_alt, Colors.blue),
+              ),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: _buildStatCard('Pending', '$pendingNotices', Icons.pending_actions, Colors.orange),
+              ),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: _buildStatCard('Approved', '$approvedNotices', Icons.check_circle, Colors.green),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16.0),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard('Rejected', '$rejectedNotices', Icons.cancel, Colors.red),
+              ),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: _buildStatCard('Avg Response', '1.2 days', Icons.timer, Colors.purple),
+              ),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: _buildStatCard('This Month', '8', Icons.calendar_month, Colors.teal),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28.0),
+          // Filters
+          Container(
+            padding: const EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(24.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Filters',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedPG,
+                        dropdownColor: Colors.black,
+                        iconEnabledColor: Colors.orange,
+                        style: GoogleFonts.poppins(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'PG',
+                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white30),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white30),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.orange),
+                          ),
+                        ),
+                        items: _pgs.map((pg) => DropdownMenuItem(
+                          value: pg,
+                          child: Text(pg),
+                        )).toList(),
+                        onChanged: (value) => setState(() => _selectedPG = value!),
+                      ),
+                    ),
+                    const SizedBox(width: 16.0),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedStatus,
+                        dropdownColor: Colors.black,
+                        iconEnabledColor: Colors.orange,
+                        style: GoogleFonts.poppins(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Status',
+                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white30),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.white30),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.orange),
+                          ),
+                        ),
+                        items: _statuses.map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status),
+                        )).toList(),
+                        onChanged: (value) => setState(() => _selectedStatus = value!),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16.0),
+                DropdownButtonFormField<String>(
+                  value: _selectedType,
+                  dropdownColor: Colors.black,
+                  iconEnabledColor: Colors.orange,
+                  style: GoogleFonts.poppins(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Type',
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: Colors.white30),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: Colors.white30),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: Colors.orange),
+                    ),
+                  ),
+                  items: _types.map((type) => DropdownMenuItem(
+                    value: type,
+                    child: Text(type),
+                  )).toList(),
+                  onChanged: (value) => setState(() => _selectedType = value!),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28.0),
+          // Notices List
+          Text(
+            'All Notices',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16.0),
+          ..._notices.map((notice) => Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: _buildNoticeCard(notice),
+          )),
         ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Summary Stats
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Total', '$totalNotices', Icons.list_alt, Colors.blue),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Pending', '$pendingNotices', Icons.pending_actions, Colors.orange),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Approved', '$approvedNotices', Icons.check_circle, Colors.green),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Rejected', '$rejectedNotices', Icons.cancel, Colors.red),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Avg Response', '1.2 days', Icons.timer, Colors.purple),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('This Month', '8', Icons.calendar_month, Colors.teal),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28.0),
-            // Filters
-            Container(
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(24.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.orange.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Filters',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedPG,
-                          dropdownColor: Colors.black,
-                          iconEnabledColor: Colors.orange,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                          decoration: InputDecoration(
-                            labelText: 'PG',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.orange),
-                            ),
-                          ),
-                          items: _pgs.map((pg) => DropdownMenuItem(
-                            value: pg,
-                            child: Text(pg),
-                          )).toList(),
-                          onChanged: (value) => setState(() => _selectedPG = value!),
-                        ),
-                      ),
-                      const SizedBox(width: 16.0),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedStatus,
-                          dropdownColor: Colors.black,
-                          iconEnabledColor: Colors.orange,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                          decoration: InputDecoration(
-                            labelText: 'Status',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.orange),
-                            ),
-                          ),
-                          items: _statuses.map((status) => DropdownMenuItem(
-                            value: status,
-                            child: Text(status),
-                          )).toList(),
-                          onChanged: (value) => setState(() => _selectedStatus = value!),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16.0),
-                  DropdownButtonFormField<String>(
-                    value: _selectedType,
-                    dropdownColor: Colors.black,
-                    iconEnabledColor: Colors.orange,
-                    style: GoogleFonts.poppins(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Type',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.white30),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.white30),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.orange),
-                      ),
-                    ),
-                    items: _types.map((type) => DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    )).toList(),
-                    onChanged: (value) => setState(() => _selectedType = value!),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28.0),
-            // Notices List
-            Text(
-              'All Notices',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            ..._notices.map((notice) => Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: _buildNoticeCard(notice),
-            )),
-          ],
-        ),
       ),
     );
   }
@@ -290,7 +328,7 @@ class _NoticesManagementScreenState extends State<NoticesManagementScreen> {
         borderRadius: BorderRadius.circular(24.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
+            color: Colors.orange.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -329,7 +367,7 @@ class _NoticesManagementScreenState extends State<NoticesManagementScreen> {
         borderRadius: BorderRadius.circular(24.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
+            color: Colors.orange.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -343,7 +381,7 @@ class _NoticesManagementScreenState extends State<NoticesManagementScreen> {
               Container(
                 padding: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.2),
+                  color: Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: Icon(
@@ -490,7 +528,7 @@ class _NoticesManagementScreenState extends State<NoticesManagementScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color),
       ),
@@ -603,4 +641,4 @@ class _NoticesManagementScreenState extends State<NoticesManagementScreen> {
       ),
     );
   }
-} 
+}

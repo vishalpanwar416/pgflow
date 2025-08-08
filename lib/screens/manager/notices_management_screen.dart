@@ -11,11 +11,11 @@ class ManagerNoticesManagementScreen extends StatefulWidget {
 }
 
 class _ManagerNoticesManagementScreenState extends State<ManagerNoticesManagementScreen> {
-  final _formKey = GlobalKey<FormState>();
+
   final _responseController = TextEditingController();
   
   String _selectedStatus = 'All';
-  String _selectedPG = 'All PGs';
+
   
   final List<Map<String, dynamic>> _notices = [
     {
@@ -196,7 +196,7 @@ class _ManagerNoticesManagementScreenState extends State<ManagerNoticesManagemen
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -250,7 +250,7 @@ class _ManagerNoticesManagementScreenState extends State<ManagerNoticesManagemen
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -286,7 +286,7 @@ class _ManagerNoticesManagementScreenState extends State<ManagerNoticesManagemen
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: statusColor),
               ),

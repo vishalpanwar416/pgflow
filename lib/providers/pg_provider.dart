@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/pg_model.dart';
-import '../models/user_model.dart';
 
 class PGNotifier extends StateNotifier<PG?> {
   PGNotifier() : super(null);

@@ -123,7 +123,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4F46E5).withOpacity(0.3),
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -145,7 +145,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -194,7 +194,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -210,7 +210,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1F2937).withOpacity(0.05),
+            color: const Color(0xFF1F2937).withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -280,9 +280,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
@@ -314,7 +314,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1F2937).withOpacity(0.05),
+            color: const Color(0xFF1F2937).withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -389,7 +389,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -426,7 +426,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -770,9 +770,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF4F46E5).withOpacity(0.1),
+                color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF4F46E5).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -912,11 +912,17 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
     // Simulate API call
     await Future.delayed(const Duration(seconds: 2));
-
+    
+    if (!mounted) return;
+    
     setState(() => _isSubmitting = false);
-
+    
+    if (!mounted) return;
+    
     Navigator.pop(context);
-
+    
+    if (!mounted) return;
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Maintenance request submitted successfully!'),

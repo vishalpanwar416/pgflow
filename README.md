@@ -1,4 +1,4 @@
-# PG Manager App
+# PG Flow
 
 A comprehensive Flutter mobile application for PG (Pay Guest) owners and tenants to manage PG operations efficiently. The app provides role-based access with different features for owners and tenants.
 

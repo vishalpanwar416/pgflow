@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'base_owner_screen.dart';
+import '../../theme/owner_theme.dart';
+import '../../widgets/owner/owner_card.dart';
 
 class ComplaintsManagementScreen extends StatefulWidget {
   const ComplaintsManagementScreen({super.key});
@@ -8,13 +12,12 @@ class ComplaintsManagementScreen extends StatefulWidget {
   State<ComplaintsManagementScreen> createState() => _ComplaintsManagementScreenState();
 }
 
-class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen> {
+class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _resolutionController = TextEditingController();
-  String _selectedPG = 'All PGs';
+  late AnimationController _animationController;
   String _selectedStatus = 'All';
   String _selectedPriority = 'All';
-
   final List<String> _pgs = ['All PGs', 'Sunshine PG', 'Royal PG', 'Comfort PG'];
   final List<String> _statuses = ['All', 'Open', 'In Progress', 'Resolved'];
   final List<String> _priorities = ['All', 'Low', 'Medium', 'High', 'Urgent'];
@@ -75,266 +78,159 @@ class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen>
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _resolutionController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final totalComplaints = _complaints.length;
     final openComplaints = _complaints.where((c) => c['status'] == 'Open').length;
     final inProgressComplaints = _complaints.where((c) => c['status'] == 'In Progress').length;
     final resolvedComplaints = _complaints.where((c) => c['status'] == 'Resolved').length;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Complaints Management',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Colors.white,
-          ),
+    return BaseOwnerScreen(
+      title: 'Complaints Management',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.analytics, color: Color(0xFF667EEA)),
+          onPressed: () => _showComingSoon(context),
+          tooltip: 'Analytics',
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.analytics, color: Colors.orange),
-            onPressed: () => _showComingSoon(context),
-            tooltip: 'Analytics',
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Stats Grid
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            childAspectRatio: 1.2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            children: [
+              _buildStatCard(
+                'Total',
+                '$totalComplaints',
+                Icons.support_agent_rounded,
+                const Color(0xFF667EEA),
+              ),
+              _buildStatCard(
+                'Open',
+                '$openComplaints',
+                Icons.fiber_new_rounded,
+                const Color(0xFFEF4444),
+              ),
+              _buildStatCard(
+                'In Progress',
+                '$inProgressComplaints',
+                Icons.pending_actions_rounded,
+                const Color(0xFFF59E0B),
+              ),
+              _buildStatCard(
+                'Resolved',
+                '$resolvedComplaints',
+                Icons.check_circle_rounded,
+                const Color(0xFF10B981),
+              ),
+            ],
           ),
+          
+          const SizedBox(height: 24),
+          
+          // Filters
+          ModernCard(
+            padding: OwnerTheme.paddingLarge,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Filters',
+                  style: OwnerTheme.textStyleHeading3,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedStatus,
+                        dropdownColor: OwnerTheme.colorSurface,
+                        iconEnabledColor: OwnerTheme.colorPrimary,
+                        style: OwnerTheme.textStyleBody1,
+                        decoration: OwnerTheme.inputDecoration(labelText: 'Status'),
+                        items: _statuses.map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status),
+                        )).toList(),
+                        onChanged: (value) => setState(() => _selectedStatus = value!),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _selectedPriority,
+                  dropdownColor: OwnerTheme.colorSurface,
+                  iconEnabledColor: OwnerTheme.colorPrimary,
+                  style: OwnerTheme.textStyleBody1,
+                  decoration: OwnerTheme.inputDecoration(labelText: 'Priority'),
+                  items: _priorities.map((priority) => DropdownMenuItem(
+                    value: priority,
+                    child: Text(priority),
+                  )).toList(),
+                  onChanged: (value) => setState(() => _selectedPriority = value!),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Complaints List
+          Text(
+            'All Complaints',
+            style: OwnerTheme.textStyleHeading3,
+          ),
+          const SizedBox(height: 16),
+          ..._complaints.map((complaint) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildComplaintCard(complaint),
+          )),
         ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Summary Stats
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Total', '$totalComplaints', Icons.list_alt, Colors.blue),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Open', '$openComplaints', Icons.pending_actions, Colors.red),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('In Progress', '$inProgressComplaints', Icons.engineering, Colors.orange),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Resolved', '$resolvedComplaints', Icons.check_circle, Colors.green),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Avg Resolution', '2.5 days', Icons.timer, Colors.purple),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Satisfaction', '4.2/5', Icons.star, Colors.yellow),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28.0),
-            // Filters
-            Container(
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(24.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.orange.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Filters',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedPG,
-                          dropdownColor: Colors.black,
-                          iconEnabledColor: Colors.orange,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                          decoration: InputDecoration(
-                            labelText: 'PG',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.orange),
-                            ),
-                          ),
-                          items: _pgs.map((pg) => DropdownMenuItem(
-                            value: pg,
-                            child: Text(pg),
-                          )).toList(),
-                          onChanged: (value) => setState(() => _selectedPG = value!),
-                        ),
-                      ),
-                      const SizedBox(width: 16.0),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedStatus,
-                          dropdownColor: Colors.black,
-                          iconEnabledColor: Colors.orange,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                          decoration: InputDecoration(
-                            labelText: 'Status',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.orange),
-                            ),
-                          ),
-                          items: _statuses.map((status) => DropdownMenuItem(
-                            value: status,
-                            child: Text(status),
-                          )).toList(),
-                          onChanged: (value) => setState(() => _selectedStatus = value!),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16.0),
-                  DropdownButtonFormField<String>(
-                    value: _selectedPriority,
-                    dropdownColor: Colors.black,
-                    iconEnabledColor: Colors.orange,
-                    style: GoogleFonts.poppins(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Priority',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.white30),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.white30),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.orange),
-                      ),
-                    ),
-                    items: _priorities.map((priority) => DropdownMenuItem(
-                      value: priority,
-                      child: Text(priority),
-                    )).toList(),
-                    onChanged: (value) => setState(() => _selectedPriority = value!),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28.0),
-            // Complaints List
-            Text(
-              'All Complaints',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            ..._complaints.map((complaint) => Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: _buildComplaintCard(complaint),
-            )),
-          ],
-        ),
+      ).animate().fadeIn(duration: OwnerTheme.animationDurationMedium).slideY(
+        begin: 0.1, 
+        end: 0, 
+        curve: Curves.easeOutQuad,
+        duration: OwnerTheme.animationDurationMedium
       ),
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(24.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8.0),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
+    return StatCard(
+      title: title,
+      value: value,
+      icon: icon,
+      iconColor: color,
     );
   }
 
   Widget _buildComplaintCard(Map<String, dynamic> complaint) {
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(24.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return ModernCard(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -343,7 +239,7 @@ class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen>
               Container(
                 padding: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.2),
+                  color: Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: Icon(
@@ -360,7 +256,7 @@ class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen>
                     Text(
                       complaint['issue'],
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Colors.black, // Changed from white to black
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -368,7 +264,7 @@ class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen>
                     Text(
                       '${complaint['tenant']} - ${complaint['pg']} Room ${complaint['room']}',
                       style: GoogleFonts.poppins(
-                        color: Colors.white70,
+                        color: Colors.black54, // Changed from white70 to black54
                         fontWeight: FontWeight.w500,
                         fontSize: 12,
                       ),
@@ -427,7 +323,7 @@ class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen>
                   onPressed: () => _showResolutionDialog(context, complaint),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Colors.black, // Changed from white to black
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -448,7 +344,7 @@ class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen>
                   onPressed: () => _showComingSoon(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Colors.black, // Changed from white to black
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(color: Colors.white30),
@@ -475,7 +371,7 @@ class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color),
       ),
@@ -588,4 +484,4 @@ class _ComplaintsManagementScreenState extends State<ComplaintsManagementScreen>
       ),
     );
   }
-} 
+}

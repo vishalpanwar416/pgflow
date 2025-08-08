@@ -164,11 +164,10 @@ class _TenantDashboardState extends State<TenantDashboard>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        bottom: false, // Don't add bottom safe area padding
+        bottom: false,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            _buildModernAppBar(),
             SliverToBoxAdapter(
               child: _fadeAnimation != null && _slideAnimation != null
                   ? FadeTransition(
@@ -176,33 +175,24 @@ class _TenantDashboardState extends State<TenantDashboard>
                       child: SlideTransition(
                         position: _slideAnimation!,
                         child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).padding.bottom + 20,
-                          ),
+                          padding: const EdgeInsets.all(20.0),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildWelcomeSection(),
+                              const SizedBox(height: 24),
                               _buildPGInfoCard(),
+                              const SizedBox(height: 32),
                               _buildStatsSection(),
+                              const SizedBox(height: 32),
                               _buildQuickActionsSection(),
+                              const SizedBox(height: 32),
                             ],
                           ),
                         ),
                       ),
                     )
-                  : Padding(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).padding.bottom + 20,
-                      ),
-                      child: Column(
-                        children: [
-                          _buildWelcomeSection(),
-                          _buildPGInfoCard(),
-                          _buildStatsSection(),
-                          _buildQuickActionsSection(),
-                        ],
-                      ),
-                    ),
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
@@ -246,7 +236,7 @@ class _TenantDashboardState extends State<TenantDashboard>
         Container(
           margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
@@ -262,7 +252,7 @@ class _TenantDashboardState extends State<TenantDashboard>
         Container(
           margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
@@ -283,7 +273,7 @@ class _TenantDashboardState extends State<TenantDashboard>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1F2937).withOpacity(0.08),
+            color: const Color(0xFF1F2937).withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -294,19 +284,8 @@ class _TenantDashboardState extends State<TenantDashboard>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF667EEA).withOpacity(0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
               Icons.waving_hand_rounded,
@@ -389,7 +368,7 @@ class _TenantDashboardState extends State<TenantDashboard>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E293B).withOpacity(0.3),
+            color: const Color(0xFF1E293B).withValues(alpha: 0.3),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -403,7 +382,7 @@ class _TenantDashboardState extends State<TenantDashboard>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -422,7 +401,7 @@ class _TenantDashboardState extends State<TenantDashboard>
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -454,7 +433,7 @@ class _TenantDashboardState extends State<TenantDashboard>
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -477,10 +456,10 @@ class _TenantDashboardState extends State<TenantDashboard>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -490,7 +469,7 @@ class _TenantDashboardState extends State<TenantDashboard>
           Icon(
             icon,
             size: 16,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
           ),
           const SizedBox(width: 8),
           Column(
@@ -501,7 +480,7 @@ class _TenantDashboardState extends State<TenantDashboard>
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
               Text(
@@ -520,34 +499,34 @@ class _TenantDashboardState extends State<TenantDashboard>
   }
 
   Widget _buildStatsSection() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Overview',
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF1F2937),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Overview',
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1E293B),
           ),
-          const SizedBox(height: 16),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _stats.length,
-            itemBuilder: (context, index) {
-              return AnimatedContainer(
-                duration: Duration(milliseconds: 400 + (index * 100)),
-                curve: Curves.easeOutCubic,
-                child: _buildModernStatCard(_stats[index], index),
-              );
-            },
+        ),
+        const SizedBox(height: 16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 1.0,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
           ),
-        ],
-      ),
+          itemCount: _stats.length,
+          itemBuilder: (context, index) {
+            final stat = _stats[index];
+            return _buildModernStatCard(stat, index);
+          },
+        ),
+      ],
     );
   }
 
@@ -564,7 +543,7 @@ class _TenantDashboardState extends State<TenantDashboard>
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1F2937).withOpacity(0.04),
+            color: const Color(0xFF1F2937).withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -612,7 +591,7 @@ class _TenantDashboardState extends State<TenantDashboard>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _getTrendColor(stat['trend']).withOpacity(0.1),
+                        color: _getTrendColor(stat['trend']).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -655,45 +634,34 @@ class _TenantDashboardState extends State<TenantDashboard>
   }
 
   Widget _buildQuickActionsSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quick Actions',
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF1F2937),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1E293B),
           ),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.3, // Increased aspect ratio
-                ),
-                itemCount: _menuItems.length,
-                itemBuilder: (context, index) {
-                  return AnimatedContainer(
-                    duration: Duration(milliseconds: 600 + (index * 100)),
-                    curve: Curves.easeOutCubic,
-                    child: _buildModernMenuCard(_menuItems[index]),
-                  );
-                },
-              );
-            },
+        ),
+        const SizedBox(height: 16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.2,
           ),
-          const SizedBox(height: 30), // Increased bottom padding
-        ],
-      ),
+          itemCount: _menuItems.length,
+          itemBuilder: (context, index) {
+            final action = _menuItems[index];
+            return _buildModernMenuCard(action);
+          },
+        ),
+      ],
     );
   }
 
@@ -713,7 +681,7 @@ class _TenantDashboardState extends State<TenantDashboard>
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1F2937).withOpacity(0.04),
+              color: const Color(0xFF1F2937).withValues(alpha: 0.04),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'base_owner_screen.dart';
+import '../../theme/owner_theme.dart';
+import '../../widgets/owner/owner_card.dart';
 
 class RentCollectionScreen extends StatefulWidget {
   const RentCollectionScreen({super.key});
@@ -8,7 +12,8 @@ class RentCollectionScreen extends StatefulWidget {
   State<RentCollectionScreen> createState() => _RentCollectionScreenState();
 }
 
-class _RentCollectionScreenState extends State<RentCollectionScreen> {
+class _RentCollectionScreenState extends State<RentCollectionScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
   String _selectedPG = 'All PGs';
   String _selectedMonth = 'December 2024';
   String _selectedStatus = 'All';
@@ -66,305 +71,201 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final totalAmount = _rentals.fold<int>(0, (sum, rental) => sum + (rental['amount'] as int));
     final paidAmount = _rentals.where((r) => r['status'] == 'Paid').fold<int>(0, (sum, rental) => sum + (rental['amount'] as int));
     final pendingAmount = _rentals.where((r) => r['status'] == 'Pending').fold<int>(0, (sum, rental) => sum + (rental['amount'] as int));
     final overdueAmount = _rentals.where((r) => r['status'] == 'Overdue').fold<int>(0, (sum, rental) => sum + (rental['amount'] as int));
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Rent Collection',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Colors.white,
-          ),
+    return BaseOwnerScreen(
+      title: 'Rent Collection',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.download, color: Color(0xFF667EEA)),
+          onPressed: () => _showComingSoon(context),
+          tooltip: 'Export',
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.download, color: Colors.orange),
-            onPressed: () => _showComingSoon(context),
-            tooltip: 'Export',
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Stats Grid
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            childAspectRatio: 1.2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            children: [
+              _buildStatCard(
+                'Total',
+                '₹$totalAmount',
+                Icons.payments_rounded,
+                const Color(0xFF667EEA),
+              ),
+              _buildStatCard(
+                'Paid',
+                '₹$paidAmount',
+                Icons.check_circle_rounded,
+                const Color(0xFF10B981),
+              ),
+              _buildStatCard(
+                'Pending',
+                '₹$pendingAmount',
+                Icons.pending_rounded,
+                const Color(0xFFF59E0B),
+              ),
+              _buildStatCard(
+                'Overdue',
+                '₹$overdueAmount',
+                Icons.warning_rounded,
+                const Color(0xFFEF4444),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Filters
+          ModernCard(
+            padding: OwnerTheme.paddingLarge,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Filters',
+                  style: OwnerTheme.textStyleHeading3,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedPG,
+                        dropdownColor: OwnerTheme.colorSurface,
+                        iconEnabledColor: OwnerTheme.colorPrimary,
+                        style: OwnerTheme.textStyleBody1,
+                        decoration: OwnerTheme.inputDecoration(labelText: 'PG'),
+                        items: _pgs.map((pg) => DropdownMenuItem(
+                          value: pg,
+                          child: Text(pg),
+                        )).toList(),
+                        onChanged: (value) => setState(() => _selectedPG = value!),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedMonth,
+                        dropdownColor: OwnerTheme.colorSurface,
+                        iconEnabledColor: OwnerTheme.colorPrimary,
+                        style: OwnerTheme.textStyleBody1,
+                        decoration: OwnerTheme.inputDecoration(labelText: 'Month'),
+                        items: _months.map((month) => DropdownMenuItem(
+                          value: month,
+                          child: Text(month),
+                        )).toList(),
+                        onChanged: (value) => setState(() => _selectedMonth = value!),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _selectedStatus,
+                  dropdownColor: OwnerTheme.colorSurface,
+                  iconEnabledColor: OwnerTheme.colorPrimary,
+                  style: OwnerTheme.textStyleBody1,
+                  decoration: OwnerTheme.inputDecoration(labelText: 'Status'),
+                  items: _statuses.map((status) => DropdownMenuItem(
+                    value: status,
+                    child: Text(status),
+                  )).toList(),
+                  onChanged: (value) => setState(() => _selectedStatus = value!),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Rentals List
+          Text(
+            'Rent Collection',
+            style: OwnerTheme.textStyleHeading3,
+          ),
+          const SizedBox(height: 16),
+          ..._rentals.map((rental) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildRentalCard(rental),
+          )),
+          
+          const SizedBox(height: 24),
+          
+          // Quick Actions
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _showComingSoon(context),
+                  style: OwnerTheme.buttonStylePrimary,
+                  child: Text(
+                    'Send Reminders',
+                    style: OwnerTheme.textStyleButton,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _showComingSoon(context),
+                  style: OwnerTheme.buttonStyleOutline,
+                  child: Text(
+                    'Generate Report',
+                    style: OwnerTheme.textStyleButton,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Summary Stats
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Total Rent', '₹${totalAmount.toStringAsFixed(0)}', Icons.payment, Colors.blue),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Paid', '₹${paidAmount.toStringAsFixed(0)}', Icons.check_circle, Colors.green),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Pending', '₹${pendingAmount.toStringAsFixed(0)}', Icons.pending_actions, Colors.orange),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: _buildStatCard('Overdue', '₹${overdueAmount.toStringAsFixed(0)}', Icons.warning, Colors.red),
-                ),
-              ],
-            ),
-            const SizedBox(height: 28.0),
-            // Filters
-            Container(
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(24.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.orange.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Filters',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedPG,
-                          dropdownColor: Colors.black,
-                          iconEnabledColor: Colors.orange,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                          decoration: InputDecoration(
-                            labelText: 'PG',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.orange),
-                            ),
-                          ),
-                          items: _pgs.map((pg) => DropdownMenuItem(
-                            value: pg,
-                            child: Text(pg),
-                          )).toList(),
-                          onChanged: (value) => setState(() => _selectedPG = value!),
-                        ),
-                      ),
-                      const SizedBox(width: 16.0),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedMonth,
-                          dropdownColor: Colors.black,
-                          iconEnabledColor: Colors.orange,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                          decoration: InputDecoration(
-                            labelText: 'Month',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.white30),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: Colors.orange),
-                            ),
-                          ),
-                          items: _months.map((month) => DropdownMenuItem(
-                            value: month,
-                            child: Text(month),
-                          )).toList(),
-                          onChanged: (value) => setState(() => _selectedMonth = value!),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16.0),
-                  DropdownButtonFormField<String>(
-                    value: _selectedStatus,
-                    dropdownColor: Colors.black,
-                    iconEnabledColor: Colors.orange,
-                    style: GoogleFonts.poppins(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Status',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.white30),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.white30),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.orange),
-                      ),
-                    ),
-                    items: _statuses.map((status) => DropdownMenuItem(
-                      value: status,
-                      child: Text(status),
-                    )).toList(),
-                    onChanged: (value) => setState(() => _selectedStatus = value!),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28.0),
-            // Rentals List
-            Text(
-              'Rent Collection',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            ..._rentals.map((rental) => Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: _buildRentalCard(rental),
-            )),
-            const SizedBox(height: 28.0),
-            // Quick Actions
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _showComingSoon(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text(
-                      'Send Reminders',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _showComingSoon(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text(
-                      'Generate Report',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+      ).animate().fadeIn(duration: OwnerTheme.animationDurationMedium).slideY(
+        begin: 0.1, 
+        end: 0, 
+        curve: Curves.easeOutQuad,
+        duration: OwnerTheme.animationDurationMedium
       ),
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(24.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8.0),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
+    return StatCard(
+      title: title,
+      value: value,
+      icon: icon,
+      iconColor: color,
     );
   }
 
   Widget _buildRentalCard(Map<String, dynamic> rental) {
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(24.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return ModernCard(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -376,7 +277,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                 child: Text(
                   rental['tenant'].split(' ').map((e) => e[0]).join(''),
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Colors.black, // Changed from white to black
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -390,7 +291,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                     Text(
                       rental['tenant'],
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Colors.black, // Changed from white to black
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -398,7 +299,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                     Text(
                       '${rental['pg']} - Room ${rental['room']}',
                       style: GoogleFonts.poppins(
-                        color: Colors.white70,
+                        color: Colors.black54, // Changed from white70 to black54
                         fontWeight: FontWeight.w500,
                         fontSize: 12,
                       ),
@@ -412,7 +313,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                   Text(
                     '₹${rental['amount']}',
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Colors.black, // Changed from white to black
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -426,7 +327,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                     child: Text(
                       rental['status'],
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Colors.black, // Changed from white to black
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),
@@ -446,7 +347,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                     Text(
                       'Due Date',
                       style: GoogleFonts.poppins(
-                        color: Colors.white70,
+                        color: Colors.black54, // Changed from white70 to black54
                         fontWeight: FontWeight.w500,
                         fontSize: 12,
                       ),
@@ -454,7 +355,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                     Text(
                       rental['dueDate'],
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Colors.black, // Changed from white to black
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -470,7 +371,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                       Text(
                         'Paid Date',
                         style: GoogleFonts.poppins(
-                          color: Colors.white70,
+                          color: Colors.black54, // Changed from white70 to black54
                           fontWeight: FontWeight.w500,
                           fontSize: 12,
                         ),
@@ -498,7 +399,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                       onPressed: () => _showComingSoon(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
+                        foregroundColor: Colors.black, // Changed from white to black
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -519,7 +420,7 @@ class _RentCollectionScreenState extends State<RentCollectionScreen> {
                       onPressed: () => _showComingSoon(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
-                        foregroundColor: Colors.white,
+                        foregroundColor: Colors.black, // Changed from white to black
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                           side: BorderSide(color: Colors.white30),
